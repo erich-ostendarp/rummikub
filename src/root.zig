@@ -67,20 +67,15 @@ const TileSet = union(enum) {
             ret.number = if (tiles[0].effectiveValue()) |t| t.number else return error.UnassignedJorker;
 
             for (tiles) |tile| {
-                const tv = switch (tile) {
-                    .standard => |s| s,
-                    .joker => |j| blk: {
-                        const tv = j orelse return error.UnassignedJorker;
+                const tv = tile.effectiveValue() orelse error.UnassignedJorker;
 
-                        ret.jokers = switch (ret.jokers) {
-                            .none => .{ .one = tv.color },
-                            .one => |o| .{ .two = .{ o, tv.color } },
-                            .two => return error.TooManyJorkers,
-                        };
-
-                        break :blk tv;
-                    },
-                };
+                if (tile == .joker) {
+                    ret.jokers = switch (ret.jokers) {
+                        .none => .{ .one = tv.color },
+                        .one => |o| .{ .two = .{ o, tv.color } },
+                        .two => return error.TooManyJorkers,
+                    };
+                }
 
                 if (ret.number != tv.number) return error.MismatchedNumber;
                 ret.number = tv.number;
@@ -94,17 +89,62 @@ const TileSet = union(enum) {
     };
 
     const Run = struct {
-        start: ?Number = null,
-        end: ?Number = null,
-        color: ?Color = null,
+        start: Number = undefined,
+        end: Number = undefined,
+        color: Color = undefined,
         jokers: union(enum) {
             none,
             one: Number,
             two: struct { Number, Number },
         } = .none,
 
-        pub fn init(tiles: []const Tile) Run {
-            _ = tiles;
+        pub fn init(tiles: []const Tile) !Run {
+            if (tiles.len < 3) return error.TooTiny;
+            if (tiles.len > Number.len) return error.TooBeeg;
+
+            var buf: [Number.len]Tile = undefined;
+            var sorted = std.ArrayList(Tile).initBuffer(&buf);
+            sorted.appendSliceAssumeCapacity(tiles);
+
+            var err: ?anyerror = null;
+            std.mem.sort(Tile, sorted.items, &err, struct {
+                fn lessThanFn(ctx: *?anyerror, a: Tile, b: Tile) bool {
+                    const a_num = if (a.effectiveValue()) |a_tv| @intFromEnum(a_tv.number) else {
+                        ctx.* = error.UnassignedJorker;
+                        return false;
+                    };
+
+                    const b_num = if (b.effectiveValue()) |b_tv| @intFromEnum(b_tv.number) else {
+                        ctx.* = error.UnassignedJorker;
+                        return false;
+                    };
+                    return a_num < b_num;
+                }
+            }.lessThanFn);
+            if (err) |e| return e;
+
+            const first = sorted.items[0].effectiveValue().?;
+
+            var ret = Run{
+                .start = first.number,
+                .end = sorted.items[sorted.items.len - 1].effectiveValue().?.number,
+                .color = first.color,
+            };
+
+            for (sorted.items, 0..) |tile, i| {
+                const tv = tile.effectiveValue().?;
+                if (@intFromEnum(tv.number) - i != @intFromEnum(ret.start)) return error.NonConsecutive;
+
+                if (tile == .joker) {
+                    ret.jokers = switch (ret.jokers) {
+                        .none => .{ .one = tv.number },
+                        .one => |o| .{ .two = .{ o, tv.number } },
+                        .two => return error.TooManyJorkers,
+                    };
+                }
+            }
+
+            return ret;
         }
     };
 };
@@ -145,11 +185,11 @@ pub fn main(init: std.process.Init) !void {
     _ = init;
 
     const tiles = &[_]Tile{
-        .{ .joker = .{ .color = .black, .number = .three } },
-        .{ .standard = .{ .color = .red, .number = .three } },
-        .{ .standard = .{ .color = .yellow, .number = .three } },
+        .{ .joker = .{ .color = .black, .number = .one } },
+        .{ .standard = .{ .color = .black, .number = .two } },
+        .{ .standard = .{ .color = .black, .number = .three } },
     };
-    const group = TileSet{ .group = try .init(tiles) };
+    const group = TileSet{ .run = try .init(tiles) };
 
     std.debug.print("{any}\n", .{group});
 }
