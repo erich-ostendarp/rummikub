@@ -42,25 +42,29 @@ const Tile = union(enum) {
         };
     }
 
-    pub fn sortTileSlice(items: []Tile) !void {
-        var err: ?anyerror = null;
-        std.mem.sort(Tile, items, &err, struct {
-            fn lessThanFn(ctx: *?anyerror, a: Tile, b: Tile) bool {
-                if (ctx.*) |_| return false;
+    const SortContext = struct {
+        err: ?anyerror = null,
 
-                const a_num = if (a.effectiveValue()) |a_tv| @intFromEnum(a_tv.number) else {
-                    ctx.* = error.UnassignedJoker;
-                    return false;
-                };
+        fn lessThanFn(ctx: *SortContext, a: Tile, b: Tile) bool {
+            if (ctx.err) |_| return false;
 
-                const b_num = if (b.effectiveValue()) |b_tv| @intFromEnum(b_tv.number) else {
-                    ctx.* = error.UnassignedJoker;
-                    return false;
-                };
-                return a_num < b_num;
-            }
-        }.lessThanFn);
-        if (err) |e| return e;
+            const a_num = if (a.effectiveValue()) |a_tv| @intFromEnum(a_tv.number) else {
+                ctx.err = error.UnassignedJoker;
+                return false;
+            };
+
+            const b_num = if (b.effectiveValue()) |b_tv| @intFromEnum(b_tv.number) else {
+                ctx.err = error.UnassignedJoker;
+                return false;
+            };
+            return a_num < b_num;
+        }
+    };
+
+    pub fn sortSlice(items: []Tile) !void {
+        var ctx = SortContext{};
+        std.mem.sort(Tile, items, &ctx, SortContext.lessThanFn);
+        if (ctx.err) |e| return e;
     }
 };
 
@@ -131,7 +135,7 @@ const TileSet = union(enum) {
             var sorted = buf[0..tiles.len];
             @memcpy(sorted, tiles);
 
-            try Tile.sortTileSlice(sorted);
+            try Tile.sortSlice(sorted);
 
             const first = sorted[0].effectiveValue().?;
 
