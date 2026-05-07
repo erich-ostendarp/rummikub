@@ -128,20 +128,20 @@ const TileSet = union(enum) {
             if (tiles.len > Number.len) return error.TooBeeg;
 
             var buf: [Number.len]Tile = undefined;
-            var sorted = std.ArrayList(Tile).initBuffer(&buf);
-            sorted.appendSliceAssumeCapacity(tiles);
+            var sorted = buf[0..tiles.len];
+            @memcpy(sorted, tiles);
 
-            try Tile.sortTileSlice(sorted.items);
+            try Tile.sortTileSlice(sorted);
 
-            const first = sorted.items[0].effectiveValue().?;
+            const first = sorted[0].effectiveValue().?;
 
             var ret = Run{
                 .start = first.number,
-                .end = sorted.items[sorted.items.len - 1].effectiveValue().?.number,
+                .end = sorted[sorted.len - 1].effectiveValue().?.number,
                 .color = first.color,
             };
 
-            for (sorted.items, 0..) |tile, i| {
+            for (sorted, 0..) |tile, i| {
                 const tv = tile.effectiveValue().?;
                 if (ret.color != tv.color) return error.MismatchedColor;
                 if (@intFromEnum(tv.number) - i != @intFromEnum(ret.start)) return error.NonConsecutive;
