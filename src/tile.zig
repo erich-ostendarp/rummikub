@@ -1,17 +1,15 @@
 const std = @import("std");
 
 pub const Color = enum {
-    pub const len = std.enums.values(Color).len;
-
     black,
     red,
     blue,
     yellow,
+
+    pub const len = std.enums.values(Color).len;
 };
 
 pub const Number = enum(u4) {
-    pub const len = std.enums.values(Number).len;
-
     one = 1,
     two,
     three,
@@ -25,13 +23,15 @@ pub const Number = enum(u4) {
     eleven,
     twelve,
     thirteen,
+
+    pub const len = std.enums.values(Number).len;
 };
 
 pub const Tile = union(enum) {
-    const Value = struct { color: Color, number: Number };
-
     standard: Value,
     joker: ?Value,
+
+    const Value = struct { color: Color, number: Number };
 
     pub fn effectiveValue(tile: Tile) ?Value {
         return switch (tile) {

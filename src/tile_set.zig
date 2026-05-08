@@ -1,7 +1,6 @@
 const std = @import("std");
 
 const tile = @import("tile.zig");
-
 const Tile = tile.Tile;
 const Color = tile.Color;
 const Number = tile.Number;
@@ -9,10 +8,10 @@ const Number = tile.Number;
 const Round = @import("Round.zig");
 
 pub const TileSet = union(enum) {
-    const min_set_len = 3;
-
     group: Group,
     run: Run,
+
+    const min_set_len = 3;
 
     pub fn init(tiles: []const Tile) !TileSet {
         return if (Group.init(tiles)) |group| .{ .group = group } else |_| if (Run.init(tiles)) |run| .{ .run = run } else |_| error.AllFailed;
@@ -23,7 +22,7 @@ pub const TileSet = union(enum) {
         colors: std.EnumSet(Color) = .empty,
         jokers: struct {
             colors: [Round.max_jokers]Color = undefined,
-            len: u2 = 0,
+            len: usize = 0,
 
             pub fn add(self: *@This(), color: Color) !void {
                 if (self.len >= self.colors.len) return error.TooManyJokers;
@@ -32,6 +31,10 @@ pub const TileSet = union(enum) {
             }
 
             pub fn slice(self: *@This()) []Color {
+                return self.colors[0..self.len];
+            }
+
+            pub fn constSlice(self: *const @This()) []const Color {
                 return self.colors[0..self.len];
             }
         } = .{},
@@ -64,7 +67,7 @@ pub const TileSet = union(enum) {
         color: Color,
         jokers: struct {
             numbers: [Round.max_jokers]Number = undefined,
-            len: u2 = 0,
+            len: usize = 0,
 
             pub fn add(self: *@This(), number: Number) !void {
                 if (self.len >= self.numbers.len) return error.TooManyJokers;
@@ -74,6 +77,10 @@ pub const TileSet = union(enum) {
 
             pub fn slice(self: *@This()) []Number {
                 return self.numbers[0..self.len];
+            }
+
+            pub fn constSlice(self: *const @This()) []const Color {
+                return self.colors[0..self.len];
             }
         } = .{},
 

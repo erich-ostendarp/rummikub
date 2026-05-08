@@ -1,14 +1,38 @@
 const Move = @import("Move.zig");
-const Game = @import("Game.zig");
+const Round = @import("Round.zig");
 const Tile = @import("tile.zig").Tile;
+const TileSet = @import("tile_set.zig").TileSet;
 
 pub const Player = union(enum) {
     human: Human,
     random: Random,
 
-    const Phase = union(enum) {
+    const PhaseTag = enum {
         initial_meld,
-        play: *const Game,
+        play,
+    };
+
+    pub const Phase = union(PhaseTag) {
+        initial_meld: void,
+        play: PlayState,
+    };
+
+    pub const PlayState = struct {
+        tile_sets: []TileSet,
+        opps: struct {
+            buf: [Round.max_players]OppState = undefined,
+            len: usize = 0,
+
+            pub fn slice(self: *@This()) []OppState {
+                return self.buf[0..self.len];
+            }
+        } = .{},
+
+        pub const OppState = struct {
+            tile_count: u8,
+            score: u8,
+            phase: PhaseTag,
+        };
     };
 
     pub fn getBaseFields(self: Player) Base {
@@ -32,6 +56,7 @@ pub const Player = union(enum) {
     const Base = struct {
         rack: []Tile,
         score: i16 = 0,
+        phase: Phase = .initial_meld,
     };
 
     const Human = struct {
