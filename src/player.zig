@@ -1,3 +1,5 @@
+const std = @import("std");
+
 const Move = @import("Move.zig");
 const Round = @import("Round.zig");
 const Tile = @import("tile.zig").Tile;
@@ -72,9 +74,11 @@ pub const Player = union(enum) {
     const Random = struct {
         base: Base,
 
-        //TODO: stubbed out; implement
         pub fn getLegalMoves(self: Random) []Move {
-            _ = self;
+            switch (self.base.phase) {
+                .initial_meld => {},
+                .play => |play_state| {},
+            }
             return &.{};
         }
     };

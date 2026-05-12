@@ -17,6 +17,17 @@ pub const TileSet = union(enum) {
         return if (Group.init(tiles)) |group| .{ .group = group } else |_| if (Run.init(tiles)) |run| .{ .run = run } else |_| error.AllFailed;
     }
 
+    pub fn val(self: TileSet) u8 {
+        return switch (self) {
+            .group => |g| @intFromEnum(g.number) * g.colors.len,
+            .run => |r| blk: {
+                const s = @intFromEnum(r.start);
+                const e = @intFromEnum(r.end);
+                break :blk (s + e) * (e - s) / 2;
+            },
+        };
+    }
+
     const Group = struct {
         number: Number,
         colors: std.EnumSet(Color) = .empty,
