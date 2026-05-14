@@ -52,3 +52,21 @@ test "permutations" {
     try std.testing.expect(permutations(3, 2) == 6);
     try std.testing.expect(permutations(3, 3) == 6);
 }
+
+pub fn permutate(T: type, arr: []T, depth: u8, target: u8, current: []T, used: []bool) void {
+    _ = arr;
+    _ = depth;
+    _ = target;
+    _ = current;
+    _ = used;
+}
+
+test "permute" {
+    const T = @TypeOf(u8);
+    const arr: []T = &.{};
+    const target = 0;
+    const current: []T = &.{};
+    const used: []bool = &.{};
+
+    permutate(u8, arr, 0, target, current, used);
+}

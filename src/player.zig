@@ -61,6 +61,8 @@ pub const Player = union(enum) {
         phase: Phase = .initial_meld,
     };
 
+    pub fn getAllMoves(self: Player) []TileSet {}
+
     const Human = struct {
         base: Base,
 
